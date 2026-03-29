@@ -342,6 +342,73 @@ Prometheus to answer the following questions:
 - Most popular flavor: `topk(1, smoothies_ordered_total)`
 - Rate of smoothies ordered per flavor: `rate(smoothies_ordered_total[5m])`
 
+### 🚀 Level Up
+
+#### Challenge 1: Understand `increase()`
+
+The metric `smoothies_ordered_total` is a **counter**. A counter only goes up. It tells you the
+total number of smoothies ordered since the service started.
+
+Sometimes this total number is not what you want. Often, you want to know:
+
+> How many new smoothies were ordered in the last 1 minute?
+
+This is exactly what `increase()` does.
+
+Try it out in Prometheus:
+- Show the total number of ordered smoothies: `smoothies_ordered_total`
+- Order a few smoothies and run: `increase(smoothies_ordered_total[1m])`
+- Group the result by flavor: `sum by (flavor) (increase(smoothies_ordered_total[1m]))`
+
+If the counter for Mango went from 12 to 17 during the last 1 minute, then 
+`increase(smoothies_ordered_total{flavor="Mango"}[1m])` is `5`.
+
+Try to answer these questions:
+- What is the difference between `smoothies_ordered_total` and `increase(smoothies_ordered_total[1m])`?
+- Which query would you use to show all smoothies ever ordered?
+- Which query would you use to show only recent smoothie orders?
+
+#### Challenge 2: Build Your Own Grafana Dashboard
+
+Create your own Grafana dashboard for smoothie orders. Try to work you through Grafana intuitively or
+use an assistant like Geminin in order to point you to the right places in Grafana.
+
+Before you start building the dashboard, make sure that Grafana can talk to Prometheus. You are already
+able to create a new connection with Prometheus as you already did it for Loki and you have the 
+`docker-compose.yml` file that contains all the relevant information. 
+
+<details>
+<summary>Show hints for connecting Grafana to Prometheus</summary>
+<ol>
+  <li>Open Grafana at <a href="http://localhost:3000">http://localhost:3000</a></li>
+  <li>Navigate to <em>Menu &gt; Connections &gt; Add new connection</em></li>
+  <li>Search for the <em>Prometheus</em> data source and add it</li>
+  <li>Set the connection URL to <code>http://prometheus:9090</code></li>
+  <li>Click <em>Save &amp; Test</em></li>
+</ol>
+</details>
+
+Your dashboard should contain:
+1. A **Stat** panel that shows how many smoothies were ordered in the currently selected time range
+1. A **Time series** panel that shows smoothie orders over time
+1. A dashboard **variable** called `flavor` so that users can filter the dashboard
+
+Useful PromQL queries:
+- Variable query: `label_values(smoothies_ordered_total, flavor)`
+- Stat panel: `sum(increase(smoothies_ordered_total{flavor=~"$flavor"}[$__range]))`
+- Time series panel: `sum(increase(smoothies_ordered_total{flavor=~"$flavor"}[1m]))`
+- Optional: show one line per flavor with `sum by (flavor) (increase(smoothies_ordered_total[1m]))`
+
+Hints:
+- Enable an **All** option for the `flavor` variable
+- Use `increase(...)` for recent activity instead of the raw counter
+- Check whether changing the `flavor` variable updates both panels
+
+Try to answer these questions:
+- Why is a **Stat** panel a good fit for a single important number?
+- Why is a **Time series** panel a better fit for changes over time?
+- Why is `increase(...)` easier to understand for a user in a dashboard than the raw counter value?
+
 ## Distributed Tracing with Jaeger
 
 Logs show you what happened. Metrics show you how your system performs. Traces help you understand
@@ -496,18 +563,3 @@ Metrics
 Tracing
 - https://opentelemetry.io/docs/concepts/
 - https://opentelemetry.io/docs/concepts/instrumentation/zero-code/
-
-## Exercises
-
-### Metrics
-
-Create a dashboard in Grafana that shows the number of smoothies ordered over time. Allow users to 
-filter per flavor. 
-
-Create a dashboard in Grafana that allows users to inspect HTTP calls. Display the request rate 
-and the average request duration. Also introduce metrics in the order service and allows users to 
-filter per HTTP path and service.
-
-**Advanced**: Create an alert that fires when the number of smoothies ordered per minute is 
-below 10. Inspect your alerts in the Prometheus UI. Use the Alertmanager to notify you via email 
-when this alert fires.
