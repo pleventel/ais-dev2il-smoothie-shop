@@ -170,6 +170,47 @@ When a log message is created, both handlers receive it. This means your logs ap
 and store it in the root directory of the project. This is the same as the previous logging configuration, but with an additional handler that sends logs to Loki.
 - Download the file [docker-compose.yml](https://github.com/peterrietzler/ais-dev2il-smoothie-shop/blob/logging/docker-compose.yml)
 and store it in the root directory of the project. Make sure you understand it!
+
+> **📄 What does the docker-compose.yml do?**
+>
+> The file starts two services with a single command:
+>
+> - **Loki** — the log storage backend. Your app sends logs here.
+> - **Grafana** — the web UI you use to explore those logs.
+>
+> ```yaml
+> services:
+>   loki:
+>     image: grafana/loki:2.9.3   # pre-built Docker image from Docker Hub
+>     ports:
+>       - "3100:3100"             # make port 3100 reachable from your laptop
+>     ...
+>
+>   grafana:
+>     image: grafana/grafana:10.2.3
+>     ports:
+>       - "3000:3000"             # Grafana UI → open http://localhost:3000
+>     depends_on:
+>       - loki                    # wait for Loki to start first
+> ```
+>
+> **🔌 What is a network — and why do we need one?**
+>
+> Each Docker container is like a **separate mini-computer**. By default they cannot talk to each other.
+> A Docker network connects them, like plugging them together with a network cable (or connecting them to the same switch)..
+>
+> ```yaml
+> networks:
+>   observability:
+>     driver: bridge   # a virtual "switch" that connects the containers
+> ```
+>
+> Both `loki` and `grafana` are attached to the `observability` network.
+> Inside this network, containers can reach each other **by their service name**.
+> That is why later you set Grafana's Loki URL to `http://loki:3100` — `loki` is simply the service name, resolved automatically within the network.
+>
+> Without the shared network, Grafana could not reach Loki at all.
+
 - Start Grafana and Loki by running `docker-compose up -d`.
 - Stop the kitchen service and start it again using 
 `uv run uvicorn kitchen_service:app --port 8001 --reload --log-config logging_config_loki.yaml`.
