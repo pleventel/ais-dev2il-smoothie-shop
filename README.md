@@ -18,6 +18,17 @@
 
 - [Distributed Tracing with Jaeger](./06_TRACING.md)
 
+## Troubleshooting 
+
+### `docker-compose` Networking / Orphaned Container Troubles
+
+If you experience any problems with `docker-compose` and networks not being found, e.g. 
+```
+Error response from daemon: failed to set up container networking: network 63e3d803b202b6c38f0e3aebbb5890a057757a9b04939500ee339e0153659e59 not found
+```
+then try to restart your docker-compose managed services using 
+`docker-compose down --remove-orphans && docker-compose up -d` 
+
 ## Further Readings
 
 Logging
